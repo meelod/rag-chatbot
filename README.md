@@ -1,5 +1,17 @@
 # PartSelect Assistant (RAG Chatbot)
 
+## Screenshots
+
+### Welcome Screen
+<img width="1286" alt="Welcome screen" src="https://github.com/user-attachments/assets/cd9e80cf-55ed-419b-81c5-32284c4e8274" />
+
+### Product Search
+<img width="1282" alt="Product search" src="https://github.com/user-attachments/assets/0633a625-e1bc-4831-825e-af544c366092" />
+
+### Product Cards
+<img width="1287" alt="Product cards" src="https://github.com/user-attachments/assets/bd4ee171-585a-4342-a5a0-d26c5b349231" />
+
+
 Full-stack chatbot for PartSelect parts:
 - **Frontend**: React + Tailwind
 - **Backend**: Node/Express
@@ -290,9 +302,4 @@ GitHub Actions runs on every push/PR to `main`:
 |---------|---------|---------|
 | `@testing-library/react` | 13.4.0 | React component testing |
 | `@testing-library/jest-dom` | 5.17.0 | DOM matchers |
-
-
-screenshots: <img width="1286" height="1065" alt="image" src="https://github.com/user-attachments/assets/cd9e80cf-55ed-419b-81c5-32284c4e8274" />
-<img width="1282" height="1069" alt="image" src="https://github.com/user-attachments/assets/0633a625-e1bc-4831-825e-af544c366092" />
-<img width="1287" height="1068" alt="image" src="https://github.com/user-attachments/assets/bd4ee171-585a-4342-a5a0-d26c5b349231" />
 
