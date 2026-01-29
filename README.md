@@ -1,21 +1,39 @@
 # PartSelect Assistant (RAG Chatbot)
 
+A full-stack AI-powered chatbot for finding refrigerator and dishwasher replacement parts on PartSelect.
+
+| | |
+|:---:|:---:|
+| **Frontend** | React + TypeScript + Tailwind CSS |
+| **Backend** | Node.js + Express |
+| **AI/ML** | OpenAI GPT-4o-mini + Embeddings |
+| **Vector DB** | ChromaDB |
+| **Data** | Puppeteer + Cheerio web scraping |
+
+---
+
 ## Screenshots
 
-### Welcome Screen
-<img width="1286" alt="Welcome screen" src="https://github.com/user-attachments/assets/cd9e80cf-55ed-419b-81c5-32284c4e8274" />
+<table>
+  <tr>
+    <td align="center">
+      <strong>Welcome Screen</strong><br/><br/>
+      <img width="400" alt="Welcome screen" src="https://github.com/user-attachments/assets/cd9e80cf-55ed-419b-81c5-32284c4e8274" />
+    </td>
+    <td align="center">
+      <strong>Product Search</strong><br/><br/>
+      <img width="400" alt="Product search" src="https://github.com/user-attachments/assets/0633a625-e1bc-4831-825e-af544c366092" />
+    </td>
+  </tr>
+  <tr>
+    <td align="center" colspan="2">
+      <strong>Product Cards with Rich Details</strong><br/><br/>
+      <img width="600" alt="Product cards" src="https://github.com/user-attachments/assets/bd4ee171-585a-4342-a5a0-d26c5b349231" />
+    </td>
+  </tr>
+</table>
 
-### Product Search
-<img width="1282" alt="Product search" src="https://github.com/user-attachments/assets/0633a625-e1bc-4831-825e-af544c366092" />
-
-### Product Cards
-<img width="1287" alt="Product cards" src="https://github.com/user-attachments/assets/bd4ee171-585a-4342-a5a0-d26c5b349231" />
-
-
-Full-stack chatbot for PartSelect parts:
-- **Frontend**: React + Tailwind
-- **Backend**: Node/Express
-- **RAG**: ChromaDB + OpenAI embeddings
+---
 
 ## Prerequisites
 
