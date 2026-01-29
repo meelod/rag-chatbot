@@ -1,0 +1,59 @@
+{
+  "name": "partselect-assistant",
+  "version": "1.0.0",
+  "private": true,
+  "homepage": ".",
+  "dependencies": {
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "axios": "^1.13.4",
+    "cheerio": "^1.2.0",
+    "chromadb": "^3.2.2",
+    "cors": "^2.8.6",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "marked": "^9.1.2",
+    "openai": "^6.16.0",
+    "puppeteer": "^24.36.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1",
+    "typescript": "^5.9.3",
+    "web-vitals": "^2.1.4"
+  },
+  "scripts": {
+    "start": "PORT=3000 react-scripts start",
+    "server": "node server.js",
+    "chroma": "chroma run --host localhost --port 8000 --path ./data/chroma",
+    "dev": "concurrently \"npm run server\" \"npm start\"",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "autoprefixer": "^10.4.23",
+    "concurrently": "^9.2.1",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.1"
+  }
+}
