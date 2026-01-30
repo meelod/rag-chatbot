@@ -1,20 +1,20 @@
 const { ChromaClient } = require('chromadb');
-const OpenAI = require('openai');
+const { embed, embedBatch, getConfig } = require('./embeddingService');
 
 /**
  * Chroma-backed vector store - Semantic Search Only
- * 
+ *
  * Env:
  * - CHROMA_URL=http://localhost:8000
  * - CHROMA_COLLECTION=partselect_products
+ *
+ * Embeddings are now handled by embeddingService.js (supports Ollama/OpenAI)
  */
 
 const COLLECTION_NAME = process.env.CHROMA_COLLECTION || 'partselect_products';
-const EMBEDDING_MODEL = process.env.EMBEDDING_MODEL || 'text-embedding-ada-002';
 
 let chromaClient = null;
 let collection = null;
-let openaiClient = null;
 
 function getChromaClient() {
     if (chromaClient) return chromaClient;
@@ -44,15 +44,6 @@ function getChromaClient() {
     return chromaClient;
 }
 
-function getOpenAIClient() {
-    if (openaiClient) return openaiClient;
-    if (!process.env.OPENAI_API_KEY) {
-        throw new Error('OPENAI_API_KEY not set - embeddings will not work');
-    }
-    openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    return openaiClient;
-}
-
 function productToText(product) {
     const parts = [
         `${product.name} (${product.partNumber}).`,
@@ -67,15 +58,6 @@ function productToText(product) {
     ].filter(Boolean);
 
     return parts.join(' ');
-}
-
-async function embed(text) {
-    const openai = getOpenAIClient();
-    const resp = await openai.embeddings.create({
-        model: EMBEDDING_MODEL,
-        input: text,
-    });
-    return resp.data[0].embedding;
 }
 
 async function ensureCollection() {
@@ -123,6 +105,10 @@ async function initialize(products, forceRefresh = false) {
     const chroma = getChromaClient();
     await chroma.version();
 
+    // Log embedding configuration
+    const embeddingConfig = getConfig();
+    console.log(`[Embeddings] Using provider: ${embeddingConfig.provider}, model: ${embeddingConfig.model}`);
+
     if (forceRefresh) {
         console.log(`FORCE_REFRESH - deleting collection "${COLLECTION_NAME}"...`);
         try {
@@ -163,7 +149,7 @@ async function initialize(products, forceRefresh = false) {
     for (let i = 0; i < uniqueProducts.length; i += batchSize) {
         const batch = uniqueProducts.slice(i, i + batchSize);
         const records = batch.map(buildRecord);
-        const embeddings = await Promise.all(records.map(r => embed(r.document)));
+        const embeddings = await embedBatch(records.map(r => r.document));
 
         await col.upsert({
             ids: records.map(r => r.id),

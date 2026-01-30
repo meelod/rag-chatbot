@@ -1,5 +1,6 @@
 import React from "react";
 import { ChatInputProps } from "../../types/chat/ChatComponents";
+import { cn } from "../../lib/utils";
 
 const ChatInput = ({
     input,
@@ -17,7 +18,7 @@ const ChatInput = ({
     };
 
     return (
-        <div className="p-3 flex-shrink-0 border-t border-slate-200 bg-white">
+        <div className="p-3 flex-shrink-0 border-t border-border bg-card">
             <div className="flex gap-2 items-center">
                 <input
                     value={input}
@@ -25,16 +26,30 @@ const ChatInput = ({
                     placeholder={placeholder}
                     onKeyDown={handleKeyPress}
                     disabled={isLoading}
-                    className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent focus:bg-white disabled:bg-slate-100 disabled:cursor-not-allowed transition-all placeholder:text-slate-400"
+                    className={cn(
+                        "flex-1 px-4 py-2.5 rounded-xl border text-sm",
+                        "bg-muted border-input text-foreground",
+                        "focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent focus:bg-background",
+                        "disabled:opacity-50 disabled:cursor-not-allowed",
+                        "transition-all placeholder:text-muted-foreground"
+                    )}
                 />
                 <button
-                    className="p-2.5 rounded-xl bg-gradient-to-br from-teal-500 to-teal-600 text-white cursor-pointer hover:from-teal-600 hover:to-teal-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                    className={cn(
+                        "p-2.5 rounded-xl",
+                        "bg-gradient-to-br from-primary to-primary/90 text-primary-foreground",
+                        "cursor-pointer hover:from-primary/90 hover:to-primary/80",
+                        "transition-all duration-200",
+                        "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background",
+                        "disabled:opacity-50 disabled:cursor-not-allowed",
+                        "shadow-sm hover:shadow-md"
+                    )}
                     onClick={onSend}
                     disabled={disabled || isLoading}
                     aria-label="Send message"
                 >
                     {isLoading ? (
-                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>

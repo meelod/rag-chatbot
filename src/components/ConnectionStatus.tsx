@@ -25,7 +25,7 @@ function ConnectionStatus() {
         return (
             <div className="flex items-center gap-1.5 text-xs">
                 <span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
-                <span className="text-teal-100">Connecting...</span>
+                <span className="text-primary-foreground/70">Connecting...</span>
             </div>
         );
     }
@@ -34,7 +34,7 @@ function ConnectionStatus() {
         return (
             <div className="flex items-center gap-1.5 text-xs">
                 <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
-                <span className="text-teal-100">Online</span>
+                <span className="text-primary-foreground/70">Online</span>
             </div>
         );
     }

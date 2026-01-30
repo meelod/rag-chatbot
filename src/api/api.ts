@@ -41,6 +41,90 @@ export const getAIMessage = async (userQuery: string): Promise<ChatResponse> => 
     }
 };
 
+export interface StreamCallbacks {
+    onToken: (token: string) => void;
+    onDone: (fullContent: string) => void;
+    onError: (error: string) => void;
+}
+
+export const streamAIMessage = async (
+    userQuery: string,
+    callbacks: StreamCallbacks,
+    abortSignal?: AbortSignal
+): Promise<void> => {
+    const baseURL = process.env.REACT_APP_API_URL || "http://localhost:3001";
+    const conversationId = getConversationId();
+
+    try {
+        const response = await fetch(`${baseURL}/api/chat/stream`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                message: userQuery,
+                conversationId: conversationId,
+            }),
+            signal: abortSignal,
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const reader = response.body?.getReader();
+        if (!reader) {
+            throw new Error('No response body');
+        }
+
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+
+            if (done) {
+                break;
+            }
+
+            buffer += decoder.decode(value, { stream: true });
+
+            // Process SSE events in buffer
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    try {
+                        const data = JSON.parse(line.slice(6));
+
+                        switch (data.type) {
+                            case 'token':
+                                callbacks.onToken(data.content);
+                                break;
+                            case 'done':
+                                callbacks.onDone(data.content);
+                                break;
+                            case 'error':
+                                callbacks.onError(data.content);
+                                break;
+                        }
+                    } catch (parseError) {
+                        // Ignore parse errors for incomplete JSON
+                    }
+                }
+            }
+        }
+    } catch (error: unknown) {
+        if (error instanceof Error && error.name === 'AbortError') {
+            console.log('Stream aborted by user');
+            return;
+        }
+        console.error('Stream error:', error);
+        callbacks.onError(error instanceof Error ? error.message : 'Stream failed');
+    }
+};
+
 export const getProductByPartNumber = async (partNumber: string): Promise<any> => {
     try {
         const api = ChatAPI();

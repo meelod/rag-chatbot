@@ -5,13 +5,55 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap");
 
 @layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --primary: 173 58% 39%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+    --accent: 173 50% 93%;
+    --accent-foreground: 173 58% 25%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 173 58% 39%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 222 47% 6%;
+    --foreground: 0 0% 95%;
+    --card: 222 47% 9%;
+    --card-foreground: 0 0% 95%;
+    --primary: 173 58% 45%;
+    --primary-foreground: 0 0% 5%;
+    --secondary: 222 47% 14%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 222 47% 14%;
+    --muted-foreground: 220 14% 65%;
+    --accent: 173 40% 20%;
+    --accent-foreground: 173 58% 75%;
+    --destructive: 0 63% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 222 47% 18%;
+    --input: 222 47% 18%;
+    --ring: 173 58% 45%;
+  }
+
   * {
     font-family: "Inter", sans-serif;
+    @apply border-border;
   }
 
   html,
   body {
-    @apply bg-gray-50 text-gray-900;
+    @apply bg-background text-foreground;
     height: 100%;
     overflow: hidden;
   }
@@ -23,12 +65,13 @@
 }
 
 @layer components {
+  /* Prose for markdown rendering - light mode */
   .prose {
-    @apply text-gray-800;
+    @apply text-foreground;
   }
 
   .prose strong {
-    @apply font-semibold text-gray-900;
+    @apply font-semibold text-foreground;
   }
 
   .prose ul,
@@ -45,10 +88,26 @@
   }
 
   .prose code {
-    @apply bg-gray-100 px-1 py-0.5 rounded text-sm;
+    @apply bg-muted px-1.5 py-0.5 rounded text-sm text-foreground font-mono;
   }
 
-  /* Inverted prose for user messages (white text) */
+  .prose pre {
+    @apply bg-muted p-3 rounded-lg overflow-x-auto my-2;
+  }
+
+  .prose pre code {
+    @apply bg-transparent p-0;
+  }
+
+  .prose a {
+    @apply text-primary hover:underline font-medium;
+  }
+
+  .prose blockquote {
+    @apply border-l-4 border-primary/30 pl-4 italic text-muted-foreground my-2;
+  }
+
+  /* Inverted prose for user messages (primary background) */
   .prose-invert {
     @apply text-white;
   }
@@ -58,11 +117,19 @@
   }
 
   .prose-invert a {
-    @apply text-white underline;
+    @apply text-white underline decoration-white/50 hover:decoration-white;
   }
 
   .prose-invert code {
-    @apply bg-teal-700 text-white px-1 py-0.5 rounded text-sm;
+    @apply bg-white/20 text-white px-1.5 py-0.5 rounded text-sm font-mono;
+  }
+
+  .prose-invert pre {
+    @apply bg-white/10 p-3 rounded-lg overflow-x-auto my-2;
+  }
+
+  .prose-invert pre code {
+    @apply bg-transparent p-0;
   }
 
   .prose-invert ul,
@@ -77,4 +144,73 @@
   .prose-invert p {
     @apply my-1 text-white;
   }
+
+  .prose-invert blockquote {
+    @apply border-l-4 border-white/30 pl-4 italic text-white/80 my-2;
+  }
+
+  /* Scrollbar styling for dark mode */
+  .dark ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .dark ::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+    border-radius: 4px;
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 4px;
+  }
+
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+
+  /* Light mode scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.2);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.4);
+  }
+
+  /* Streaming cursor animation */
+  @keyframes cursor-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  .streaming-cursor {
+    @apply inline-block w-2 h-4 ml-0.5 bg-current align-text-bottom;
+    animation: cursor-blink 1s ease-in-out infinite;
+  }
+
+  /* Focus ring styling */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background;
+  }
+}
+
+/* Smooth transitions for theme changes */
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+html.dark {
+  color-scheme: dark;
 }

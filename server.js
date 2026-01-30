@@ -7,6 +7,13 @@ require('dotenv').config();
 const { initializeVectorStore } = require('./src/services/vectorStore');
 const { getRelevantContext } = require('./src/services/ragService');
 
+// Reliability infrastructure
+const { getConversation, setConversation, getStats: getConversationStats } = require('./src/services/conversationStore');
+const { getRedisStatus } = require('./src/services/redisClient');
+const { createRateLimiter, createStrictRateLimiter, getRateLimitConfig } = require('./src/middleware/rateLimiter');
+const { healthCheck: embeddingHealthCheck, getConfig: getEmbeddingConfig } = require('./src/services/embeddingService');
+const { getStats: getCacheStats } = require('./src/services/embeddingCache');
+
 // Constants
 const { generateMockResponse } = require('./src/constants/mock');
 const { SYSTEM_PROMPT } = require('./src/constants/prompts');
@@ -19,13 +26,15 @@ const PORT = process.env.PORT || DEFAULT_PORT;
 app.use(cors());
 app.use(express.json());
 
+// Rate limiting
+const rateLimiter = createRateLimiter();
+const strictRateLimiter = createStrictRateLimiter();
+app.use('/api/chat', rateLimiter);
+
 // Initialize OpenAI client
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
-
-// Store conversation history (in production, use a database)
-const conversations = new Map();
 
 // Chat endpoint
 app.post('/api/chat', async (req, res) => {
@@ -37,8 +46,8 @@ app.post('/api/chat', async (req, res) => {
             return res.status(400).json({ error: 'Message is required' });
         }
 
-        // Get or create conversation history
-        let messages = conversations.get(conversationId) || [
+        // Get or create conversation history (now using persistent store)
+        let messages = await getConversation(conversationId) || [
             {
                 role: 'system',
                 content: SYSTEM_PROMPT
@@ -117,8 +126,8 @@ app.post('/api/chat', async (req, res) => {
             content: assistantMessage
         });
 
-        // Store updated conversation
-        conversations.set(conversationId, messages);
+        // Store updated conversation (now using persistent store)
+        await setConversation(conversationId, messages);
 
         // Return response
         res.json({
@@ -135,13 +144,183 @@ app.post('/api/chat', async (req, res) => {
     }
 });
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
+// Health check endpoint (enhanced)
+app.get('/api/health', async (req, res) => {
+    const redisStatus = getRedisStatus();
+    const rateLimitConfig = getRateLimitConfig();
+    const embeddingConfig = getEmbeddingConfig();
+    const conversationStats = await getConversationStats();
+    const cacheStats = getCacheStats();
+
+    // Check embedding health (async)
+    let embeddingHealth = { healthy: false, error: 'Not checked' };
+    try {
+        embeddingHealth = await embeddingHealthCheck();
+    } catch (error) {
+        embeddingHealth = { healthy: false, error: error.message };
+    }
+
     res.json({
         status: 'ok',
         timestamp: new Date().toISOString(),
-        hasApiKey: !!process.env.OPENAI_API_KEY
+        hasApiKey: !!process.env.OPENAI_API_KEY,
+        services: {
+            redis: {
+                connected: redisStatus.connected,
+                url: redisStatus.url,
+                error: redisStatus.error,
+            },
+            embeddings: {
+                healthy: embeddingHealth.healthy,
+                provider: embeddingConfig.provider,
+                model: embeddingConfig.model,
+                dimensions: embeddingHealth.dimensions,
+                error: embeddingHealth.error,
+            },
+            conversations: conversationStats,
+            cache: cacheStats,
+            rateLimit: rateLimitConfig,
+        },
     });
+});
+
+// Streaming chat endpoint (SSE)
+app.post('/api/chat/stream', strictRateLimiter, async (req, res) => {
+    // Set SSE headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
+
+    try {
+        const { message, conversationId } = req.body;
+        console.log(`\n[STREAM] Received message: "${message.substring(0, 50)}${message.length > 50 ? '...' : ''}"`);
+
+        if (!message) {
+            res.write(`data: ${JSON.stringify({ type: 'error', content: 'Message is required' })}\n\n`);
+            res.end();
+            return;
+        }
+
+        // Get or create conversation history
+        let messages = await getConversation(conversationId) || [
+            {
+                role: 'system',
+                content: SYSTEM_PROMPT
+            }
+        ];
+
+        // RAG: Get relevant product context
+        let contextMessage = '';
+        try {
+            const relevantContext = await getRelevantContext(message);
+            if (relevantContext) {
+                contextMessage = relevantContext;
+                console.log('[STREAM/RAG] Retrieved relevant product information');
+            }
+        } catch (ragError) {
+            console.warn('[STREAM/RAG] Error retrieving context:', ragError.message);
+        }
+
+        // Add user message
+        messages.push({ role: 'user', content: message });
+
+        // Attach RAG context
+        if (contextMessage) {
+            messages.push({
+                role: 'system',
+                content: contextMessage
+            });
+        }
+
+        // Limit history
+        if (messages.length > 7) {
+            const system = messages[0];
+            messages = [system, ...messages.slice(-6)];
+        }
+
+        // Check mock mode
+        const USE_MOCK_MODE = process.env.USE_MOCK_MODE === 'true' || !process.env.OPENAI_API_KEY;
+
+        if (USE_MOCK_MODE) {
+            // Simulate streaming for mock mode
+            console.log('[STREAM/MOCK] Using mock response');
+            const mockResponse = generateMockResponse(message, messages);
+            const words = mockResponse.split(' ');
+
+            for (const word of words) {
+                res.write(`data: ${JSON.stringify({ type: 'token', content: word + ' ' })}\n\n`);
+                await new Promise(r => setTimeout(r, 50)); // Simulate typing delay
+            }
+
+            // Save conversation
+            messages.push({ role: 'assistant', content: mockResponse });
+            await setConversation(conversationId, messages);
+
+            res.write(`data: ${JSON.stringify({ type: 'done', content: mockResponse })}\n\n`);
+            res.end();
+            return;
+        }
+
+        // Stream from OpenAI
+        try {
+            console.log('[STREAM/API] Starting OpenAI stream...');
+            const startTime = Date.now();
+
+            const stream = await openai.chat.completions.create({
+                model: API_CONFIG.model,
+                messages: messages,
+                temperature: API_CONFIG.temperature,
+                max_tokens: API_CONFIG.max_tokens,
+                stream: true,
+            });
+
+            let fullContent = '';
+
+            for await (const chunk of stream) {
+                const content = chunk.choices[0]?.delta?.content;
+                if (content) {
+                    fullContent += content;
+                    res.write(`data: ${JSON.stringify({ type: 'token', content })}\n\n`);
+                }
+
+                // Check if client disconnected
+                if (res.destroyed) {
+                    console.log('[STREAM] Client disconnected');
+                    break;
+                }
+            }
+
+            const duration = Date.now() - startTime;
+            console.log(`[STREAM/API] Completed in ${duration}ms`);
+
+            // Save complete conversation
+            messages.push({ role: 'assistant', content: fullContent });
+            await setConversation(conversationId, messages);
+
+            res.write(`data: ${JSON.stringify({ type: 'done', content: fullContent })}\n\n`);
+            res.end();
+
+        } catch (apiError) {
+            console.error('[STREAM/API ERROR]', apiError.message);
+
+            // Fall back to mock
+            const mockResponse = generateMockResponse(message, messages);
+            res.write(`data: ${JSON.stringify({ type: 'error', content: 'API error, using fallback response' })}\n\n`);
+            res.write(`data: ${JSON.stringify({ type: 'token', content: mockResponse })}\n\n`);
+
+            messages.push({ role: 'assistant', content: mockResponse });
+            await setConversation(conversationId, messages);
+
+            res.write(`data: ${JSON.stringify({ type: 'done', content: mockResponse })}\n\n`);
+            res.end();
+        }
+
+    } catch (error) {
+        console.error('[STREAM] Error:', error);
+        res.write(`data: ${JSON.stringify({ type: 'error', content: error.message })}\n\n`);
+        res.end();
+    }
 });
 
 // Debug endpoint to see what products are in the vector store

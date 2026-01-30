@@ -12,7 +12,7 @@ const MessageContent = ({
     // Simple markdown render for user messages or no products
     const renderMarkdown = (text: string) => (
         <div
-            className="prose prose-sm max-w-none text-gray-800"
+            className="prose prose-sm max-w-none"
             style={{ lineHeight: "1.6" }}
             dangerouslySetInnerHTML={{
                 __html: marked(text, { breaks: true }),
@@ -133,7 +133,7 @@ const MessageContent = ({
                     return (
                         <div
                             key={`text-${idx}`}
-                            className="prose prose-sm max-w-none text-gray-800"
+                            className="prose prose-sm max-w-none"
                             dangerouslySetInnerHTML={{
                                 __html: marked(segment.content, { breaks: true }),
                             }}
