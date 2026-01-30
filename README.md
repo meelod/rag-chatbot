@@ -28,15 +28,16 @@ A full-stack AI-powered chatbot for finding refrigerator and dishwasher replacem
 
 <!-- TODO: Add dark mode screenshots -->
 
+
 <table>
   <tr>
     <td align="center">
       <strong>Welcome Screen</strong><br/><br/>
-      <img width="400" alt="Welcome screen" src="https://github.com/user-attachments/assets/cd9e80cf-55ed-419b-81c5-32284c4e8274" />
+      <img width="1608" height="1027" alt="image" src="https://github.com/user-attachments/assets/4f2481f0-e9ea-460f-9516-3630dd7e4738" />
     </td>
     <td align="center">
       <strong>Product Search</strong><br/><br/>
-      <img width="400" alt="Product search" src="https://github.com/user-attachments/assets/0633a625-e1bc-4831-825e-af544c366092" />
+      <img width="1603" height="1025" alt="image" src="https://github.com/user-attachments/assets/26a6c9a0-aec7-4906-b1af-c334cf8e614a" />
     </td>
   </tr>
   <tr>
